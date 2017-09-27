@@ -1,6 +1,7 @@
 package securelogin
 
 import (
+	"errors"
 	"net/url"
 	"time"
 )
@@ -45,4 +46,42 @@ type Token struct {
 	// Email of the user. The protocol does not confirm user email and does
 	// not intend to do so.
 	Email string
+}
+
+// Verify token with given options.
+func (t Token) Verify(opts ...Option) error {
+	var cfg = NewConfig(opts...)
+
+	if len(cfg.publicKey) > 0 {
+		t.PublicKey = cfg.publicKey
+	}
+
+	if !verifySignature(t.rawPayload, t.Signature, t.PublicKey) {
+		return errors.New("invalid signature")
+	}
+
+	if cfg.hmac {
+		if len(cfg.hmacSecret) > 0 {
+			t.HMACSecret = cfg.hmacSecret
+		}
+		if !verifyHMAC(t.rawPayload, t.HMACSignature, t.HMACSecret) {
+			return errors.New("invalid HMAC signature")
+		}
+	}
+
+	if _, ok := cfg.origins[t.Provider]; !ok {
+		return errors.New("invalid provider")
+	}
+
+	if !cfg.connect {
+		if _, ok := cfg.origins[t.Client]; !ok {
+			return errors.New("invalid client")
+		}
+	}
+
+	if cfg.expire && time.Now().UTC().After(t.ExpireAt) {
+		return errors.New("expired token")
+	}
+
+	return verifyScope(cfg, t.Scope)
 }
