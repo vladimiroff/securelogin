@@ -1,3 +1,9 @@
+// Package securelogin implements the SecureLogin protocol.
+//
+// SecureLogin is an authentication protocol created by Sakurity. The Draft RFC
+// Specification for it can be read at:
+//
+//   https://github.com/sakurity/securelogin-spec/blob/master/index.md
 package securelogin
 
 import (
