@@ -13,8 +13,8 @@ import (
 //
 // This is just a convenient function which unmarshals a token and then calls
 // Verify on it with given options.
-func Verify(token string, opts ...Option) (Token, error) {
-	t, err := UnmarshalToken(token)
+func Verify(token []byte, opts ...Option) (Token, error) {
+	t, err := Unmarshal(token)
 	if err != nil {
 		return t, err
 	}

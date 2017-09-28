@@ -2,13 +2,34 @@ package securelogin
 
 import (
 	"encoding/base64"
+	"io"
 	"strings"
 )
 
 var base64Encode = base64.StdEncoding.EncodeToString
 
-// MarshalToken returns encoded Token as defied by the spec.
-func MarshalToken(t Token) string {
+type Encoder struct {
+	w io.Writer
+}
+
+func NewEncoder(w io.Writer) *Encoder {
+	return &Encoder{w}
+}
+
+func (e *Encoder) Encode(t Token) error {
+	data := Marshal(t)
+
+	_, err := e.w.Write(data)
+	return err
+}
+
+// Marshal returns encoded Token as defied by the spec.
+func Marshal(t Token) []byte {
+	return []byte(MarshalString(t))
+}
+
+// MarshalString returns encoded Token as defied by the spec to string.
+func MarshalString(t Token) string {
 	return escapeJoin([]string{
 		string(t.rawPayload),
 		escapeJoin([]string{

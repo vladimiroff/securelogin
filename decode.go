@@ -3,6 +3,8 @@ package securelogin
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,9 +13,35 @@ import (
 
 var base64Decode = base64.StdEncoding.DecodeString
 
-// UnmarshalToken parses given string and constructs a Token from it or fails
+// Decoder reads and decodes sltoken from an input stream.
+type Decoder struct {
+	r io.Reader
+}
+
+// NewDecoder returns a new decoder that reads from r.
+func NewDecoder(r io.Reader) *Decoder {
+	return &Decoder{r}
+}
+
+// Decode reads sltoken encoded data and returns a Token.
+func (dec *Decoder) Decode(t *Token) error {
+	all, err := ioutil.ReadAll(dec.r)
+	if err != nil {
+		return err
+	}
+
+	*t, err = Unmarshal(all)
+	return err
+}
+
+// Unmarshal parses encoded sltoken and returns Token and an error.
+func Unmarshal(data []byte) (Token, error) {
+	return UnmarshalString(string(data))
+}
+
+// UnmarshalString parses given string and constructs a Token from it or fails
 // with an error.
-func UnmarshalToken(s string) (Token, error) {
+func UnmarshalString(s string) (Token, error) {
 	var t Token
 	data, err := unescapeSplit(s, 4)
 	if err != nil {

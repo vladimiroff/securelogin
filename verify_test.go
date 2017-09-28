@@ -13,7 +13,7 @@ const (
 )
 
 func TestSuccessfulVerify(t *testing.T) {
-	tok, err := Verify(token, WithOrigins(domain), WithoutExpire)
+	tok, err := Verify([]byte(token), WithOrigins(domain), WithoutExpire)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
@@ -33,7 +33,12 @@ func TestSuccessfulVerify(t *testing.T) {
 }
 
 func TestEmptyTokenDoesntVerify(t *testing.T) {
-	_, err := Verify("")
+	_, err := Verify([]byte{})
+	if err == nil {
+		t.Fatalf("Empty token shouldn't Verify")
+	}
+
+	_, err = Verify(nil)
 	if err == nil {
 		t.Fatalf("Empty token shouldn't Verify")
 	}

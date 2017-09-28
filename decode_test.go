@@ -2,6 +2,7 @@ package securelogin
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -38,38 +39,50 @@ const (
 		"kdbjcc08YBKWdCY56lQJIi92wcGOW+KcMvbSgHN6WbU=,homakov@gmail.com"
 )
 
-func TestUnmarshalToken(t *testing.T) {
-	var cases = []struct {
-		str string
-		err error
-	}{
-		{token, nil},
-		{"", wrap("token", "expected 4 elements, got 1")},
-		{decTruncToken, wrap("token", "expected 4 elements, got 2")},
-		{decBadPayload, wrap("payload", "expected 4 elements, got 3")},
-		{decBadScope, wrap("payload", "parsing scope failed")},
-		{decBadExpireAt, wrap("payload", "invalid expire time")},
-		{decBadSignatures, wrap("signatures", "illegal base64 data at input byte 40")},
-		{decBadKeys, wrap("keys", "illegal base64 data at input byte 40")},
-		{decMissingKey, wrap("keys", "expected 2 elements, got 1")},
-	}
+var decodeCases = []struct {
+	str string
+	err error
+}{
+	{token, nil},
+	{"", wrap("token", "expected 4 elements, got 1")},
+	{decTruncToken, wrap("token", "expected 4 elements, got 2")},
+	{decBadPayload, wrap("payload", "expected 4 elements, got 3")},
+	{decBadScope, wrap("payload", "parsing scope failed")},
+	{decBadExpireAt, wrap("payload", "invalid expire time")},
+	{decBadSignatures, wrap("signatures", "illegal base64 data at input byte 40")},
+	{decBadKeys, wrap("keys", "illegal base64 data at input byte 40")},
+	{decMissingKey, wrap("keys", "expected 2 elements, got 1")},
+}
 
-	for i, c := range cases {
+func TestUnmarshal(t *testing.T) {
+	for i, c := range decodeCases {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			_, err := UnmarshalToken(c.str)
-
-			if c.err == nil {
-				if err != nil {
-					t.Fatalf("Unexpected error: %s", err)
-				}
-			} else {
-				if err == nil {
-					t.Fatalf("Expected error; got nil")
-				}
-				if c.err.Error() != err.Error() {
-					t.Fatalf("Expected error %q; got %q", c.err, err)
-				}
-			}
+			_, err := Unmarshal([]byte(c.str))
+			compareErrors(t, c.err, err)
 		})
+	}
+}
+
+func TestDecoder(t *testing.T) {
+	for i, c := range decodeCases {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			tok := new(Token)
+			dec := NewDecoder(strings.NewReader(c.str))
+			err := dec.Decode(tok)
+			compareErrors(t, c.err, err)
+		})
+	}
+}
+
+func compareErrors(t *testing.T, expected, actual error) {
+	if expected == nil {
+		fatal(t, actual)
+	} else {
+		if actual == nil {
+			t.Fatalf("Expected error; got nil")
+		}
+		if expected.Error() != actual.Error() {
+			t.Fatalf("Expected error %q; got %q", expected, actual)
+		}
 	}
 }

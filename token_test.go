@@ -54,7 +54,7 @@ func TestTokenVerify(t *testing.T) {
 		{[]Option{o, WithScope(multiModeScope)}, tokScopeChange(changeScope), "invalid scope"},
 	}
 
-	token, err := UnmarshalToken(token)
+	token, err := UnmarshalString(token)
 	if err != nil {
 		t.Skipf("UnmarshalToken has failed with %q, skipping Verify")
 	}
